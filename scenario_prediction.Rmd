@@ -1,0 +1,151 @@
+---
+title: "For BS scenario prediction"
+output: html_notebook
+---
+Input data:
+scenario_input.csv
+
+```{r library load, echo = FALSE, message=FALSE}
+library(tidyverse)
+library(lubridate)
+library(openxlsx)
+```
+
+
+```{r data prep, echo = F}
+rawdata <- read.csv("scenario_input.csv",header = T)
+df1 <- rawdata
+```
+```{r format date, echo = F}
+df1$date <- as.Date(df1$date, format = "%m/%d/%Y")
+```
+
+# Prediction
+```{r empty dataframe}
+# Make empty data frame for dates prior to record
+df.n <- data.frame(date = format(seq(as.Date("2010-01-01"), as.Date("2020-12-01"), by="months"))) %>% 
+  mutate(year = year(date),
+         month = month(date),
+         
+         coal = NA,
+         gas = NA,
+         oil = NA,
+         
+         nuclear = NA,
+         hydro = NA,
+         
+         wind = NA,
+         solar = NA,
+         other = NA)
+```
+
+
+```{r fit each month seperately, predict continuous growth}
+df.year <- data.frame(year=2020:2030)
+for (i in 1:12){
+  df.temp <- subset(df1, month ==i)
+  
+  fit.total <- lm(total~year,data=df.temp)
+  
+  fit.coal <- lm(coal~year,data=df.temp)
+  fit.gas <- lm(gas~year,data=df.temp)
+  fit.oil <- lm(oil~year,data=df.temp)
+  
+  fit.nuclear <- lm(nuclear~year,data=df.temp)
+  fit.hydro <- lm(hydro~year,data=df.temp)
+  fit.wind <- lm(wind~year,data=df.temp)
+  fit.solar <- lm(solar~year,data=df.temp)
+  fit.other <- lm(other~year,data=df.temp)
+
+  n.total <- cbind(df.year,predict(fit.total, df.year, interval = "confidence"))
+  
+  n.coal <- cbind(df.year,predict(fit.coal,df.year, interval = "confidence"))
+  n.gas <- cbind(df.year,predict(fit.gas,df.year, interval = "confidence"))
+  n.oil <- cbind(df.year,predict(fit.oil,df.year, interval = "confidence"))
+  
+  n.nuclear <- cbind(df.year,predict(fit.nuclear,df.year, interval = "confidence"))
+  n.hydro <- cbind(df.year,predict(fit.hydro,df.year, interval = "confidence"))
+  n.wind <- cbind(df.year,predict(fit.wind,df.year, interval = "confidence"))
+  n.solar <- cbind(df.year,predict(fit.solar,df.year, interval = "confidence"))
+  n.other <- cbind(df.year,predict(fit.other,df.year, interval = "confidence"))
+
+  n.total$month <-i
+  n.coal$month <-i
+  n.gas$month <-i
+  n.oil$month <-i
+  
+  n.nuclear$month <-i
+  n.hydro$month <-i
+  n.wind$month <-i
+  n.solar$month <-i
+  n.other$month <-i
+
+  if(i==1){
+    ndf.total <- n.total
+    ndf.coal <- n.coal
+    ndf.gas <- n.gas
+    ndf.oil <- n.oil
+    ndf.nuclear <- n.nuclear
+    ndf.hydro <- n.hydro
+    ndf.wind <- n.wind
+    ndf.solar <- n.solar
+    ndf.other <- n.other
+  }else{
+    ndf.total <- rbind(ndf.total, n.total)
+    ndf.coal <- rbind(ndf.coal, n.coal)
+    ndf.gas <- rbind(ndf.gas, n.gas)
+    ndf.oil <- rbind(ndf.oil, n.oil)
+    ndf.nuclear <- rbind(ndf.nuclear, n.nuclear)
+    ndf.hydro <- rbind(ndf.hydro, n.hydro)
+    ndf.wind <- rbind(ndf.wind, n.wind)
+    ndf.solar <- rbind(ndf.solar, n.solar)
+    ndf.other <- rbind(ndf.other, n.other)
+  }
+}
+ndf.total$date <- as.Date(paste(ndf.total$year,ndf.total$month, "01",sep = "-"))
+  ndf.coal$date <- as.Date(paste(ndf.coal$year,ndf.coal$month, "01",sep = "-"))
+  ndf.gas$date <- as.Date(paste(ndf.gas$year,ndf.gas$month, "01",sep = "-"))
+  ndf.oil$date <- as.Date(paste(ndf.oil$year,ndf.oil$month, "01",sep = "-"))
+  ndf.nuclear$date <- as.Date(paste(ndf.nuclear$year,ndf.nuclear$month, "01",sep = "-"))
+  ndf.hydro$date <- as.Date(paste(ndf.hydro$year,ndf.hydro$month, "01",sep = "-"))
+  ndf.wind$date <- as.Date(paste(ndf.wind$year,ndf.wind$month, "01",sep = "-"))
+  ndf.solar$date <- as.Date(paste(ndf.solar$year,ndf.solar$month, "01",sep = "-"))
+  ndf.other$date <- as.Date(paste(ndf.other$year,ndf.other$month, "01",sep = "-"))
+```
+
+
+```{r write continuous prediction result}
+# iniate workbook object
+# wb <- createWorkbook()
+
+# add 2 worksheets to the workbook object, arbitrary names
+# addWorksheet(wb, "prediction_total")
+# 
+# addWorksheet(wb, "prediction_coal")
+# addWorksheet(wb, "prediction_gas")
+# addWorksheet(wb, "prediction_oil")
+# 
+# addWorksheet(wb, "prediction_nuclear")
+# addWorksheet(wb, "prediction_hydro")
+# addWorksheet(wb, "prediction_wind")
+# addWorksheet(wb, "prediction_solar")
+# addWorksheet(wb, "prediction_other")
+
+
+# write data to worksheets in the workbook object
+# writeData(wb, 1, ndf.total)
+# writeData(wb, 2, ndf.coal)
+# writeData(wb, 3, ndf.gas)
+# writeData(wb, 4, ndf.oil)
+# 
+# writeData(wb, 5, ndf.nuclear)
+# writeData(wb, 6, ndf.hydro)
+# writeData(wb, 7, ndf.wind)
+# writeData(wb, 8, ndf.solar)
+# writeData(wb, 9, ndf.other)
+
+
+# save the workbook to a file
+# saveWorkbook(wb, "prediction_continuous_growth.xlsx")
+```
+
